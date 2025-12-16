@@ -3,174 +3,363 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estrategista de Concursos - IA</title>
+    <title>Planner Concurso Elite | AI Strategy</title>
+    
+    <!-- Fontes e Ícones -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         :root {
-            --primary: #2563eb;
+            --primary: #0d9488; /* Verde Petróleo */
+            --primary-dark: #0f766e;
+            --accent: #f59e0b; /* Dourado */
             --bg: #f8fafc;
             --surface: #ffffff;
-            --text: #1e293b;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --danger: #ef4444;
             --border: #e2e8f0;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-            line-height: 1.6;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        h1 { margin-bottom: 10px; color: var(--primary); }
-        .subtitle { color: #64748b; font-size: 0.95rem; }
-        
-        .card {
-            background: var(--surface);
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            border: 1px solid var(--border);
-            margin-bottom: 30px;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
         }
 
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header { text-align: center; margin-bottom: 50px; }
+        h1 { font-weight: 700; color: var(--text-main); margin: 0; font-size: 2rem; }
+        .subtitle { color: var(--text-muted); font-weight: 400; margin-top: 8px; }
+        .highlight { color: var(--primary); }
+
+        /* Card Principal */
+        .card {
+            background: var(--surface);
+            padding: 40px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Formulário */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+        
         .form-group { margin-bottom: 20px; }
-        label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem; }
+        .full-width { grid-column: 1 / -1; }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
         input, select {
             width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border);
+            padding: 14px;
+            border: 2px solid var(--bg);
+            background: var(--bg);
             border-radius: 8px;
-            font-size: 1rem;
-            box-sizing: border-box;
-            transition: border-color 0.2s;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
         }
+
         input:focus, select:focus {
             outline: none;
             border-color: var(--primary);
+            background: var(--surface);
         }
 
-        button {
+        button.btn-premium {
             width: 100%;
-            background-color: var(--primary);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
             border: none;
-            padding: 16px;
+            padding: 18px;
             border-radius: 8px;
             font-size: 1rem;
-            font-weight: bold;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+
+        button.btn-premium:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(13, 148, 136, 0.3);
+        }
+        button:disabled { background: var(--text-muted); transform: none; cursor: not-allowed; }
+
+        /* Loader */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid var(--bg);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* RESULTADO (Área injetada pela IA) */
+        #result-area { display: none; animation: fadeIn 0.6s ease-out; }
+        
+        /* Chart Section */
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 30px;
+        }
+
+        /* Estrutura injetada pela IA */
+        .section-title h2 {
+            font-size: 1.25rem;
+            color: var(--primary-dark);
+            border-left: 4px solid var(--accent);
+            padding-left: 12px;
+            margin: 40px 0 20px;
+        }
+        
+        /* Grid Semanal */
+        .weekly-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .day-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+        .day-header {
+            background: var(--text-main);
+            color: #fff;
+            padding: 5px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .day-content { padding: 10px; line-height: 1.4; color: var(--text-muted); }
+        .tag {
+            display: inline-block;
+            background: #e0f2fe; color: #0369a1;
+            padding: 2px 6px; border-radius: 4px;
+            font-size: 0.7rem; margin-top: 5px;
+        }
+
+        /* Strategy Cards */
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+        }
+        .strategy-card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .strategy-card h3 { margin: 0 0 10px; font-size: 1rem; }
+        .border-left-red { border-left: 4px solid var(--danger); }
+        .border-left-yellow { border-left: 4px solid var(--accent); }
+        
+        .badge {
+            font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;
+            text-transform: uppercase; font-weight: 700;
+        }
+        .badge-high { background: #fee2e2; color: #991b1b; }
+        .badge-medium { background: #fef3c7; color: #92400e; }
+
+        /* Simulator */
+        .simulator-box {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .scenario { margin-bottom: 15px; }
+        .scenario span { font-size: 0.9rem; font-weight: 600; display: block; margin-bottom: 5px; }
+        .progress-bg {
+            background: #cbd5e1;
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--text-main);
+            transition: width 1s ease-out;
+        }
+        .progress-fill.success { background: var(--primary); }
+        .score-text { float: right; font-size: 0.8rem; margin-top: -20px; color: var(--text-main); }
+
+        /* Checklist Gamificado */
+        .checklist-container {
+            background: #fff;
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .check-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #f1f5f9;
             cursor: pointer;
             transition: background 0.2s;
         }
-        button:hover { background-color: #1d4ed8; }
-        button:disabled { background-color: #94a3b8; cursor: not-allowed; }
-
-        #result {
-            display: none;
-            animation: fadeIn 0.5s ease-in;
-        }
+        .check-item:hover { background: #f8fafc; }
+        .check-item input { width: auto; margin-right: 15px; }
+        .check-item input:checked + span { text-decoration: line-through; color: var(--text-muted); }
         
-        /* Estilização do Conteúdo Gerado */
-        #result h2 {
-            color: var(--primary);
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 8px;
-            margin-top: 30px;
-            font-size: 1.4rem;
+        .progress-bar-container {
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            margin-top: 15px;
+            overflow: hidden;
         }
-        #result ul { padding-left: 20px; }
-        #result li { margin-bottom: 8px; }
-        
-        .loading {
-            text-align: center;
-            display: none;
-            padding: 20px;
-            color: #64748b;
+        .daily-progress {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.3s ease;
         }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Utils */
+        .mt-2 { margin-top: 10px; }
+        .text-center { text-align: center; }
+        small { color: var(--text-muted); }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>🎯 Estrategista de Aprovação</h1>
-        <p class="subtitle">Gere um plano de estudos tático e simule suas chances baseado na banca.</p>
+        <h1>CONCURSO<span class="highlight">PLANNER</span></h1>
+        <p class="subtitle">Estratégia de Aprovação & Inteligência Artificial</p>
     </header>
 
+    <!-- Card de Entrada -->
     <div class="card">
-        <form id="studyForm">
-            <div class="form-group">
-                <label for="concurso">Qual concurso você quer passar?</label>
-                <input type="text" id="concurso" placeholder="Ex: Auditor Receita Federal, TJ-SP Escrevente..." required>
+        <form id="strategyForm">
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label>Qual seu concurso alvo?</label>
+                    <input type="text" id="concurso" placeholder="Ex: Auditor Fiscal Receita Federal" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Banca Organizadora</label>
+                    <input type="text" id="banca" placeholder="Ex: FGV, Cebraspe" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Data Prevista</label>
+                    <input type="text" id="dataProva" placeholder="Ex: Dezembro/2024" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Nível Atual</label>
+                    <select id="nivel">
+                        <option value="Iniciante">Iniciante (Começando do zero)</option>
+                        <option value="Intermediário">Intermediário (Já tenho base)</option>
+                        <option value="Avançado">Avançado (Fase de polimento)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Horas Líquidas/Dia</label>
+                    <select id="horas">
+                        <option value="2h">2 horas (Guerreiro)</option>
+                        <option value="4h">4 horas (Padrão)</option>
+                        <option value="6h">6 horas (Alto Rendimento)</option>
+                        <option value="8h+">8h+ (Dedicação Exclusiva)</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="banca">Qual a Banca Organizadora?</label>
-                <input type="text" id="banca" placeholder="Ex: FGV, Cebraspe, Vunesp..." required>
-            </div>
-
-            <div class="form-group">
-                <label for="nivel">Seu Nível Atual</label>
-                <select id="nivel">
-                    <option value="Iniciante (Nunca estudei)">Iniciante (Nunca estudei)</option>
-                    <option value="Intermediário (Já estudei, mas parei)">Intermediário (Já estudei, mas parei)</option>
-                    <option value="Avançado (Já bato na trave)">Avançado (Já bato na trave)</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="horas">Horas Líquidas por Dia</label>
-                <select id="horas">
-                    <option value="2">2 horas (Guerreiro)</option>
-                    <option value="4">4 horas (Padrão)</option>
-                    <option value="6">6 horas (Dedicação Alta)</option>
-                    <option value="8+">8+ horas (Full Time)</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="dataProva">Data Prevista da Prova (ou Mês)</label>
-                <input type="text" id="dataProva" placeholder="Ex: Novembro/2024" required>
-            </div>
-
-            <button type="submit" id="btnSubmit">Gerar Estratégia de Aprovação</button>
+            <button type="submit" id="btnSubmit" class="btn-premium">Gerar Plano de Elite</button>
         </form>
-        
+
         <div class="loading" id="loading">
-            Analisando editais anteriores e perfil da banca...<br>
-            <small>Isso pode levar alguns segundos.</small>
+            <div class="spinner"></div>
+            <p>A IA está analisando padrões da banca e montando sua estratégia...</p>
         </div>
     </div>
 
-    <div id="result" class="card">
-        <!-- O conteúdo da IA será injetado aqui -->
+    <!-- Card de Resultado -->
+    <div id="result-area" class="card">
+        <!-- Gráfico Renderizado via JS -->
+        <div class="chart-container">
+            <canvas id="strategyChart"></canvas>
+        </div>
+
+        <!-- Conteúdo Injetado pela IA -->
+        <div id="ai-content"></div>
     </div>
 </div>
 
 <script>
-    document.getElementById('studyForm').addEventListener('submit', async (e) => {
+    let chartInstance = null;
+
+    document.getElementById('strategyForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const btn = document.getElementById('btnSubmit');
         const loading = document.getElementById('loading');
-        const resultDiv = document.getElementById('result');
+        const resultArea = document.getElementById('result-area');
+        const aiContent = document.getElementById('ai-content');
         
-        // UI States
+        // Reset UI
         btn.disabled = true;
-        btn.innerText = 'Processando estratégia...';
         loading.style.display = 'block';
-        resultDiv.style.display = 'none';
-        resultDiv.innerHTML = '';
+        resultArea.style.display = 'none';
 
-        const formData = {
+        const payload = {
             concurso: document.getElementById('concurso').value,
             banca: document.getElementById('banca').value,
             nivel: document.getElementById('nivel').value,
@@ -182,27 +371,96 @@
             const response = await fetch('/api/ai', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(payload)
             });
 
             const data = await response.json();
 
             if (data.result) {
-                resultDiv.innerHTML = data.result;
-                resultDiv.style.display = 'block';
+                // 1. Injetar HTML
+                aiContent.innerHTML = data.result;
+                resultArea.style.display = 'block';
+
+                // 2. Extrair dados ocultos para o Gráfico
+                const dataDiv = document.getElementById('ai-chart-data');
+                if (dataDiv) {
+                    renderChart(
+                        dataDiv.dataset.difficulty,
+                        dataDiv.dataset.demand,
+                        dataDiv.dataset.compatibility
+                    );
+                }
+
+                // 3. Inicializar Lógica do Checklist (Gamificação)
+                initChecklistLogic();
+
+                // Scroll suave para o resultado
+                resultArea.scrollIntoView({ behavior: 'smooth' });
             } else {
-                alert('Erro ao gerar plano. Tente novamente.');
+                alert('Erro ao gerar estratégia.');
             }
 
         } catch (error) {
-            console.error('Erro:', error);
-            alert('Erro de conexão. Verifique sua internet.');
+            console.error(error);
+            alert('Erro de conexão.');
         } finally {
-            btn.disabled = false;
-            btn.innerText = 'Gerar Estratégia de Aprovação';
             loading.style.display = 'none';
+            btn.disabled = false;
         }
     });
+
+    // Função para renderizar gráfico com Chart.js
+    function renderChart(diff, demand, comp) {
+        const ctx = document.getElementById('strategyChart').getContext('2d');
+        
+        if (chartInstance) chartInstance.destroy();
+
+        chartInstance = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Dificuldade Banca', 'Exigência Cargo', 'Sua Compatibilidade', 'Fator Estratégia', 'Tempo de Prova'],
+                datasets: [{
+                    label: 'Análise de Viabilidade (0-100)',
+                    data: [diff, demand, comp, 85, 70], // 85 e 70 são fixos para compor o visual
+                    backgroundColor: 'rgba(13, 148, 136, 0.2)',
+                    borderColor: '#0d9488',
+                    pointBackgroundColor: '#f59e0b',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#f59e0b'
+                }]
+            },
+            options: {
+                elements: { line: { borderWidth: 3 } },
+                scales: { r: { suggestMin: 0, suggestMax: 100 } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    // Gamificação Local (Checklist)
+    function initChecklistLogic() {
+        const checkboxes = document.querySelectorAll('.checklist-container input[type="checkbox"]');
+        const progressBar = document.getElementById('daily-progress-bar');
+        
+        if(!checkboxes.length) return;
+
+        function updateProgress() {
+            const total = checkboxes.length;
+            const checked = document.querySelectorAll('.checklist-container input[type="checkbox"]:checked').length;
+            const percentage = (checked / total) * 100;
+            
+            progressBar.style.width = percentage + '%';
+            
+            if(percentage === 100) {
+                progressBar.style.backgroundColor = '#10b981'; // Verde sucesso
+            }
+        }
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateProgress);
+        });
+    }
 </script>
 
 </body>
