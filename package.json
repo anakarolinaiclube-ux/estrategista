@@ -1,6 +1,6 @@
 {
-  "name": "microsaas-concurso-planner",
-  "version": "1.0.0",
+  "name": "microsaas-concurso-premium",
+  "version": "2.0.0",
   "scripts": {
     "start": "node api/ai.js"
   },
