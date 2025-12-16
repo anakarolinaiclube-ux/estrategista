@@ -1,0 +1,10 @@
+{
+  "name": "microsaas-concurso-planner",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node api/ai.js"
+  },
+  "dependencies": {
+    "openai": "^4.28.0"
+  }
+}
